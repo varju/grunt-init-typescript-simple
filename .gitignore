@@ -1,0 +1,11 @@
+*.iml
+*.ipr
+*.iws
+.idea/
+.idea_modules/
+*~
+*.log
+*.eml
+.*.sw?
+.DS_Store
+Thumbs.db

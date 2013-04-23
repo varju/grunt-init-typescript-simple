@@ -1,0 +1,3 @@
+{
+  "app/src/ts/name.ts": "app/src/ts/{%= full_path %}.ts"
+}

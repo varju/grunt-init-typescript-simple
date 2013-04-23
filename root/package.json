@@ -1,0 +1,29 @@
+{
+    "name"        : "{%= full_name %}",
+    "version"     : "{%= version %}",
+    "description" : "{%= description %}",
+    "author"      : "{%= author %}",
+    "homepage"    : "{%= homepage %}",
+    "categories"  : [],
+    "repository"  : {
+        "type" : "git",
+        "url"  : "{%= repository  %}"
+    },
+    "devDependencies": {
+        "grunt"                    : "0.4.1",
+        "grunt-contrib-clean"      : "*",
+        "grunt-contrib-connect"    : "*",
+        "grunt-contrib-yuidoc"     : "*",
+        "grunt-contrib-cssmin"     : "*",
+        "grunt-contrib-sass"       : "*",
+        "grunt-contrib-watch"      : "*",
+        "grunt-contrib-uglify"     : "*",
+        "grunt-contrib-copy"       : "*",
+        "grunt-contrib-requirejs"  : "*",
+        "grunt-contrib-coffee"     : "*",
+        "grunt-contrib-livereload" : "*",
+        "grunt-typescript"         : "*",
+        "grunt-regarde"            : "*",
+        "coffee-script"            : "*"
+    }
+}
