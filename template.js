@@ -9,7 +9,7 @@
 'use strict';
 
 // 設定
-exports.description = 'Create a TypeScript project, including many other features.';
+exports.description = 'Create a TypeScript project including many useful features which integrates libraries such as JsTestDriver, Jasmine, jQuery, LiveReload.';
 exports.notes = '';
 exports.after =
     'You should now install project dependencies with _npm ' +
@@ -29,7 +29,7 @@ exports.template = function (grunt, init, done) {
             init.prompt('title'),
             {
                 name: 'project_type',
-                message: 'project type library or application',
+                message: 'Which is this project suitable for the "library" or the "application"?',
                 default: 'library'
             },
             {
@@ -49,39 +49,63 @@ exports.template = function (grunt, init, done) {
         ],
         function (err, props) {
             // パッケージ名とクラス名を設定する
-            // ugo.fuga.hoge
-            //  class_name   : Hoge
-            //  package_name : ugo.fuga
-            //  package_path : ugo/fuga
-            //  full_name    : ugo.fuga.Hoge
-            //  full_path    : ugo/fuga/Hoge
-            var className, fullName, fullPath, packageName, packagePath, relativePathToRoot;
-            var packageNames = props.name.split('.');
-            className = packageNames.pop();
-            className = className.charAt(0).toUpperCase() + className.slice(1);
-            if (packageNames.length > 1) {
-                packageName = packageNames.join('.');
-                packagePath = packageNames.join('/');
-                fullName    = packageName + '.' + className;
-                fullPath    = packagePath + '/' + className;
-            }
-            else {
-                fullName = fullPath = className;
-            }
-            relativePathToRoot = '';
-            for (var i=0; i<packageNames.length; i++) {
-                relativePathToRoot += '../';
-            }
-            props.class_name   = className;
-            props.name         = fullName;
-            props.full_name    = fullName;
-            props.full_path    = fullPath;
-            props.package_name = packageName;
-            props.package_path = packagePath;
-            props.path_to_root = relativePathToRoot;
+            var moduleDepth = 0;
+            (function () {
+                var projectName = '',className='', fullName='', fullPath='', subFullName='', subFullPath='',
+                    subPackageName = '', subPackagePath = '', packageName='', packagePath='',
+                    relativePathToRoot='', relativePathToSub = '';
+
+                var uc = function (str) { return str.charAt(0).toUpperCase() + str.slice(1); };
+                var lc = function (str) { return str.toLowerCase(); };
+
+                var packageNames = props.name.split(/[-.]/);
+                className = packageNames.pop();
+                className = uc(className);
+                if (packageNames.length > 0) {
+                    packageName = packageNames.join('.');
+                    packagePath = packageNames.join('/');
+                    fullName    = packageName + '.' + className;
+                    fullPath    = packagePath + '/' + className;
+                    subPackageName = lc(fullName);
+                    subPackagePath = lc(fullPath);
+                    subFullName = subPackageName + '.MockSubClass';
+                    subFullPath = subPackagePath + '/MockSubClass';
+                    for (var i=0; i<packageNames.length; i++) {
+                        relativePathToRoot += '../';
+                    }
+                }
+                else {
+                    subPackageName = subPackagePath = lc(className);
+                    subFullName = subPackageName + '.MockSubClass';
+                    subFullPath = subPackagePath + '/MockSubClass';
+                    fullName = fullPath = className;
+                    fullName = fullPath = className;
+                }
+                relativePathToSub = lc(className) + '/';
+                moduleDepth = packageNames.length;
+                projectName = fullName.replace(/[.]/g, '-').toLowerCase();
+
+                props.is_application   = props.project_type !== 'library';
+                props.is_library       = !props.is_application;
+                props.project_name     = projectName;
+                props.class_name       = className;
+                props.name             = fullName;
+                props.full_name        = fullName;
+                props.full_path        = fullPath;
+                props.package_name     = packageName;
+                props.package_path     = packagePath;
+                props.sub_package_name = subPackageName;
+                props.sub_package_path = subPackagePath;
+                props.sub_full_name    = subFullName;
+                props.sub_full_path    = subFullPath;
+                props.path_to_root     = relativePathToRoot;
+                props.path_to_sub      = relativePathToSub;
+                props.moduleDepth      = moduleDepth;
+            })();
+
+            var files = init.filesToCopy(props);
             
             // ライセンスファイルを追加
-            var files = init.filesToCopy(props);
             init.addLicenseFiles(files, props.licenses);
 
             // 全てコピーするが libs 以下は置換対象にしない
@@ -99,6 +123,10 @@ exports.template = function (grunt, init, done) {
                     'tasks/**'
                 ]
             });
+            
+            // 削除
+            grunt.file.delete('./__delete');
+            
             done();
         }
     );

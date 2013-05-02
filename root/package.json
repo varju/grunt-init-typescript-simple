@@ -1,5 +1,5 @@
 {
-    "name"        : "{%= full_name %}",
+    "name"        : "{%= project_name %}",
     "version"     : "{%= version %}",
     "description" : "{%= description %}",
     "author"      : "{%= author %}",
@@ -22,8 +22,10 @@
         "grunt-contrib-requirejs"  : "*",
         "grunt-contrib-coffee"     : "*",
         "grunt-contrib-livereload" : "*",
-        "grunt-typescript"         : "*",
+        "grunt-curl"               : "*",
+        "grunt-exec"               : "*",
         "grunt-regarde"            : "*",
+        "grunt-proxy"              : "*",
         "coffee-script"            : "*"
     }
 }

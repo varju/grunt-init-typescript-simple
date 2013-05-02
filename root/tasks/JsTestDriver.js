@@ -1,9 +1,9 @@
 module.exports = function (grunt) {
-    grunt.registerTask(
+    grunt.registerMultiTask(
         "jstd",
         "task for running tests with JsTestDriver",
         function () {
-            var options = grunt.config.get('jstd.options');
+            var options = this.data.options;
             var done = this.async();
             grunt.util.spawn(
                 {

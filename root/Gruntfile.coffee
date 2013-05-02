@@ -1,7 +1,7 @@
 module.exports = (grunt) ->
   # 初期設定
   require('coffee-script')
-  configuration = require('./GruntConfig').initConfiguration(grunt)
+  configuration = require('./.grunt/config').initConfiguration(grunt)
   grunt.initConfig(configuration)
   projectType = grunt.config.get('project.type')
   isLibraryProject = projectType is 'library'
@@ -18,9 +18,11 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks('grunt-contrib-copy')
   grunt.loadNpmTasks('grunt-contrib-coffee')
   grunt.loadNpmTasks('grunt-contrib-livereload')
+  grunt.loadNpmTasks('grunt-proxy')
+  grunt.loadNpmTasks('grunt-exec')
   grunt.loadNpmTasks('grunt-regarde')
-  grunt.loadNpmTasks('grunt-typescript')
   grunt.loadTasks('tasks')
+  grunt.loadNpmTasks('grunt-curl')
 
   ###################################
   ############### 共通 ##############
@@ -29,47 +31,51 @@ module.exports = (grunt) ->
   do ->
     tasks = if isLibraryProject
       [
-        'typescript:concat'
+        'exec:typescript_concat_lib'
         'sass:compile'
       ]
     else
       [
-        'typescript:split'
+        'exec:typescript_concat_app'
         'sass:compile'
       ]
     grunt.registerTask('compile', tasks)
 
   ###################################
-  ########### 開発フェーズ ###########
+  ########### 開発フェーズ ##########
   ###################################
   # 開発常駐タスク
   grunt.registerTask(
     'dev',
     [
       'clean:srcjs'
-      'typescript:split'
+      'exec:typescript_split'
       'sass:compile'
+      'coffee:testcase'
       'livereload-start'
+      'connect:testFixtures'
       'connect:livereload'
+      'proxy:server'
       'regarde'
     ]
   )
   grunt.registerTask('default', ['dev'])
-
-  # tsコンパイル後の後処理
-  grunt.registerTask(
-    'post-tscompile',
-    [
-      'copy:src-jsonly'
-      'clean:tsjs'
-    ]
-  )
+  
+  # ベンダーライブラリの取得
+  grunt.registerTask('fetch', ['curl']);
+  
+  # コンパイル
+  grunt.registerTask('c', ['exec:typescript_split']);
+  
+  # テスト
+  grunt.registerTask('test', ['coffee:testcase', 'jstd:dev'])
+  grunt.registerTask('t', ['test'])
 
   # ドキュメント生成
   grunt.registerTask('doc', ['yuidoc:compile'])
 
   ###################################
-  ########## テストフェーズ ##########
+  ########## テストフェーズ #########
   ###################################
   do ->
     tasks = if isLibraryProject
@@ -78,23 +84,23 @@ module.exports = (grunt) ->
           'clean:target'
           'coffee:testcase'
           'compile'
-          'copy:target-lib'
       ]
     else
       [
           'clean:srcjs'
           'clean:target'
           'coffee:testcase'
-          'compile'
-          'requirejs:app'
+          'sass:compile'
           'copy:target-app'
+          'exec:typescript_split'
+          'requirejs:app'
       ]
     grunt.registerTask('release:test', tasks)
 
-  grunt.registerTask('rt'  , ['release:test'])
-  grunt.registerTask('rat' , ['release:test', 'jstd'])
-  grunt.registerTask('test', ['coffee:testcase', 'jstd'])
-  grunt.registerTask('t'   , ['test'])
+  grunt.registerTask('rt'      , ['release:test'])
+  grunt.registerTask('rat'     , ['release:test', 'jstd:link'])
+  grunt.registerTask('linktest', ['coffee:testcase', 'jstd:link'])
+  grunt.registerTask('lt'      , ['linktest'])
 
   ###################################
   ######### リリースフェーズ #########
@@ -104,18 +110,17 @@ module.exports = (grunt) ->
       [
           'clean'
           'compile'
-          'cssmin:compress'
           'uglify:lib'
-          'copy:dist-lib'
           'yuidoc:compile'
       ]
     else
       [
           'clean'
-          'compile'
+          'sass:compile'
           'cssmin:compress'
-          'requirejs:appmin'
           'copy:dist-app'
+          'exec:typescript_split'
+          'requirejs:appmin'
           'yuidoc:compile'
       ]
     grunt.registerTask('release:prod', tasks)

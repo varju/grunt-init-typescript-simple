@@ -1,0 +1,23 @@
+[
+    {
+        "name": "jquery",
+        "url" : "http://code.jquery.com/jquery-1.8.3.min.js"
+    },
+    {
+        "name": "json2",
+        "url" : "https://raw.github.com/douglascrockford/JSON-js/master/json2.js"
+    },
+    {
+        "name": "underscore",
+        "url" : "http://underscorejs.org/underscore-min.js"
+    },
+    {
+        "name": "require",
+        "url" : "http://requirejs.org/docs/release/2.1.5/minified/require.js"
+    },
+    {
+        "name": "handlebars",
+        "url" : "https://raw.github.com/wycats/handlebars.js/1.0.0-rc.3/dist/handlebars.runtime.js"
+    }
+]
+

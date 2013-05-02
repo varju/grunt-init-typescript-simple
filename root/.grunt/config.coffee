@@ -7,7 +7,10 @@ exports.initConfiguration = (grunt) ->
     project:
       type: '{%= project_type %}'
       name: '<%= pkg.name.toLowerCase() %>'
-      port: 8000
+      devPort : 8000
+      jstdPort: 9876
+      proxyPort: 9000
+      fixturesPort: 9001
       logo: '{%= logo %}'
       apiTheme: 'yuidoc-bootstrap-theme'
 
@@ -19,6 +22,7 @@ exports.initConfiguration = (grunt) ->
       debug      : '<%= path.base %>/target'
       production : '<%= path.base %>/dist'
       test       : '<%= path.base %>/test'
+      fixtures   : '<%= path.test %>/static/fixtures'
       apidocs    : './docs/api/docs'
       apiTheme   : './docs/api/theme/<%= project.apiTheme %>'
 
@@ -26,6 +30,7 @@ exports.initConfiguration = (grunt) ->
       css      : '<%= path.develop %>/css'
       ts       : '<%= path.develop %>/ts'
       js       : '<%= path.develop %>/js'
+      vendor   : '<%= path.js %>/vendor'
       testCase : '<%= path.test %>/specs'
 
       # ソースファイル
@@ -34,6 +39,8 @@ exports.initConfiguration = (grunt) ->
         appName   : 'app.js'
         appNameTs : 'app.ts'
         libName   : '<%= project.name %>.js'
+        libNameTs : '<%= project.name %>.ts'
+        libPathTs : '{%= full_path %}.ts'
         scss      : '<%= path.css %>/<%= path.source.cssName %>.scss' # SCSSソースパス
         css       : '<%= path.css %>/<%= path.source.cssName %>.css'  # コンパイル後CSSパス
         ts        : '<%= path.ts %>/**/*.ts'                          # TypeScript
@@ -44,13 +51,14 @@ exports.initConfiguration = (grunt) ->
 
       # ターゲットファイル(圧縮先)
       target:
-        cssName : 'main.min.css'
-        appName : 'app.min.js'
-        libName : '<%= project.name %>.min.js'
-        css     : '<%= path.css %>/<%= path.target.cssName %>' # 圧縮CSSファイル名
-        app     : '<%= path.js %>/<%= path.target.appName %>'  # 圧縮JSファイル名(アプリ)
-        lib     : '<%= path.js %>/<%= path.target.libName %>'  # 圧縮JSファイル名(ライブラリ)
-        site    : '<%= path.production %>/site.zip'            # ウェブサイト全体のZIP TODO:日付と時刻の付与
+        cssName   : 'main.min.css'
+        appName   : 'app.min.js'
+        libName   : '<%= project.name %>.min.js'
+        libNameTs : '<%= project.name %>.min.js'
+        css       : '<%= path.css %>/<%= path.target.cssName %>' # 圧縮CSSファイル名
+        app       : '<%= path.js %>/<%= path.target.appName %>'  # 圧縮JSファイル名(アプリ)
+        lib       : '<%= path.js %>/<%= path.target.libName %>'  # 圧縮JSファイル名(ライブラリ)
+        site      : '<%= path.production %>/site.zip'            # ウェブサイト全体のZIP TODO:日付と時刻の付与
 
     # sass のコンパイル
     # TODO: デバッグ時にも結合されてしまうのが微妙。全体をコンパイル仕直すので遅い。常駐しないので単体でも速くない。
@@ -60,38 +68,10 @@ exports.initConfiguration = (grunt) ->
           '<%= path.source.css %>': '<%= path.source.scss %>'
 
     # CSS の圧縮
-    # TODO: ライブラリの時には原則不要。その切り替えが必要。
     cssmin:
       compress:
         files:
           '<%= path.target.css %>': ['<%= path.source.css %>']
-
-    # TypeScript のコンパイル
-    typescript:
-      # 開発モード(分割コンパイル)
-      split:
-        src: ['<%= path.ts %>/**/*.ts']
-        dest: '<%= path.js %>'
-        options:
-          base_path   : '<%= path.ts %>'
-          module      : 'amd'
-          target      : 'ES3'
-          sourcemap   : false
-          declaration : false
-
-      # tsからのみなるライブラリの場合。app.ts は除く
-      concat:
-        src: [
-          '<%= path.ts %>/**/*.ts'
-          '!<%= path.ts %>/<%= path.source.appNameTs %>'
-        ],
-        dest: '<%= path.source.lib %>',
-        options:
-          base_path   : '<%= path.ts %>'
-          module      : 'amd'
-          target      : 'ES3'
-          sourcemap   : false
-          declaration : false
 
     # CoffeeScript のコンパイル
     coffee:
@@ -107,11 +87,33 @@ exports.initConfiguration = (grunt) ->
           ext     : '.js'
         ]
 
+    # 外部コマンド実行
+    exec:
+      # 分割コンパイル app/lib 共通
+      typescript_split:
+        cmd: 'tsc --out <%= path.js %> <%= path.ts %>/<%= path.source.appNameTs %>'
+        stdout: true
+        stderr: true
+      # 結合コンパイル app
+      typescript_concat_app:
+        cmd: 'tsc --out <%= path.debug %>/<%= path.source.appName  %> <%= path.ts %>/<%= path.source.appNameTs %>'
+        stdout: true
+        stderr: true
+      # 結合コンパイル lib
+      typescript_concat_lib:
+        cmd: 'tsc --out <%= path.debug %>/<%= path.source.libName %> <%= path.ts %>/<%= path.source.libPathTs %>'
+        stdout: true
+        stderr: true
+      # PhantomJS のキャプチャ
+      capture_phantomjs:
+        cmd: 'phantomjs <%= path.test %>/lib/phantomjs-jstd.js'
+
+
     # JS の圧縮
     uglify:
       lib:
         files:
-          '<%= path.target.lib %>': ['<%= path.source.lib %>']
+          '<%= path.production %>/<%= path.target.libName %>': ['<%= path.debug %>/<%= path.source.libName %>']
 
     # ビルド(アプリの場合のみ。ライブラリプロジェクトではビルドは不要)
     requirejs:
@@ -121,7 +123,7 @@ exports.initConfiguration = (grunt) ->
           name           : 'app'
           mainConfigFile : '<%= path.source.app %>'
           optimize       : 'none'
-          out            : '<%= path.source.app %>'
+          out            : '<%= path.debug %>/js/<%= path.source.appName %>'
           include        : 'requireLib'
           paths:
             'requireLib': './vendor/require'
@@ -131,7 +133,7 @@ exports.initConfiguration = (grunt) ->
           name           : 'app'
           mainConfigFile : '<%= path.source.app %>'
           optimize       : 'uglify2'
-          out            : '<%= path.js %>/<%= path.target.appName %>'
+          out            : '<%= path.production %>/js/<%= path.target.appName %>'
           include        : 'requireLib'
           paths:
             'requireLib': './vendor/require'
@@ -140,25 +142,35 @@ exports.initConfiguration = (grunt) ->
     # TODO: このままだと1ファイル変更されるたびに全ファイルがコンパイルされて非効率だし、コンパイラが常駐してくれない
     regarde:
       sass:
-        files: '**/*.scss'
+        files: '<%= path.css %>/**/*.scss'
         tasks: ['sass:compile']
       css:
-        files: '**/*.css'
+        files: '<%= path.css %>/**/*.css'
         tasks: ['livereload']
       html:
-        files: '**/*.html'
+        files: '<%= path.develop %>/**/*.html'
         tasks: ['livereload']
+
+    # プロキシサーバ (IDEA、JSTestDriver、web server の統合用)
+    proxy:
+      server:
+        options:
+          port: '<%= project.proxyPort %>'
+          router:
+            '^localhost/$' : 'localhost:<%= project.jstdPort %>'
+            '^localhost((?!/spec/javascripts/fixtures).)+': 'localhost:<%= project.jstdPort %>'
+            'localhost/spec/javascripts/fixtures': 'localhost:<%= project.fixturesPort %>'
 
     # 静的リソース配信サーバ
     connect:
-      server:
+      testFixtures:
         options:
-          port: '<%= project.port %>'
-          base: '<%= path.develop %>'
-          keepalive: true
+          port: '<%= project.fixturesPort %>'
+          base: '<%= path.fixtures %>'
+          keepalive: false
       livereload:
         options:
-          port: '<%= project.port %>'
+          port: '<%= project.devPort %>'
           base: '<%= path.develop %>'
           keepalive: false
 
@@ -198,7 +210,7 @@ exports.initConfiguration = (grunt) ->
           src    : [
             'css/**'
             'image/**'
-            'js/*.js'
+            'js/**/*.js'
             '*.*'
           ]
           dest: '<%= path.production %>/'
@@ -212,39 +224,24 @@ exports.initConfiguration = (grunt) ->
           src    : [
             'css/**'
             'image/**'
-            'js/*.js'
+            'js/**/*.js'
             '*.*'
           ]
           dest: '<%= path.debug %>/'
         ]
-      'dist-lib':
-        files: [
-          expand : true
-          cwd    : '<%= path.js %>'
-          src    : ['<%= path.target.libName %>']
-          dest   : '<%= path.production %>/'
-        ]
-      'target-lib':
-        files: [
-          expand : true
-          cwd    : '<%= path.js %>'
-          src    : ['<%= path.source.libName %>']
-          dest   : '<%= path.debug %>'
-        ]
-      'src-jsonly':
-        files: [
-          expand : true
-          cwd    : '<%= path.ts %>'
-          src    : ['**/*.js']
-          dest   : '<%= path.js %>'
-        ]
 
     # JsTestDriverによるテスト実行
     jstd:
-      options:
-        jar      : '<%= path.test %>/lib/JsTestDriver.jar'
-        config   : '<%= path.test %>/jsTestDriver.conf'
-        basePath : '<%= path.test %>'
+      dev:
+        options:
+          jar      : '<%= path.test %>/lib/JsTestDriver.jar'
+          config   : '<%= path.test %>/jsTestDriverForDev.conf'
+          basePath : '<%= path.test %>'
+      link:
+        options:
+          jar      : '<%= path.test %>/lib/JsTestDriver.jar'
+          config   : '<%= path.test %>/jsTestDriver.conf'
+          basePath : '<%= path.test %>'
 
     # APIドキュメント作成
     yuidoc:
@@ -260,13 +257,17 @@ exports.initConfiguration = (grunt) ->
           outdir    : '<%= path.apidocs %>'
           themedir  : '<%= path.apiTheme %>'
 
-
+    addbom:
+      add:
+        files:
+          src: ['app/src/ts/**/*.ts']
 
   # grunt-contrib-copy のカスタマイズ
   createProcessContent = (targetEnviroment) ->
     isProduction = targetEnviroment is 'production'
 
     (contents, srcpath) ->
+      grunt.log.writeln('[src]: ' + srcpath)
       # パスの取得
       config            = grunt.config.get
       appPath           = if isProduction then config('path.target.app') else config('path.source.app')
@@ -302,8 +303,9 @@ exports.initConfiguration = (grunt) ->
       # app.js 以外の js の除外
       isAppJs = m(appPath)
       isJs = m('**/*.js')
-      grunt.log.writeln(appPath)
-      if isJs && !isAppJs
+      isVendorJs = m('app/src/js/vendor/**/*.js')
+      #grunt.log.writeln(appPath)
+      if isJs && !isAppJs && !isVendorJs
         return false
 
       # メインのスクリプト読み込みを置換
@@ -320,6 +322,7 @@ exports.initConfiguration = (grunt) ->
 
       contents
 
+  # LiveReload
   createLiveReloadMiddleware = () ->
     path = require('path')
     lrSnippet = require('grunt-contrib-livereload/lib/utils').livereloadSnippet
@@ -332,8 +335,23 @@ exports.initConfiguration = (grunt) ->
 
   configuration.connect.livereload.options.middleware = createLiveReloadMiddleware()
 
+  # copy settings
   configuration.copy['dist-app'].options.processContent = createProcessContent('production')
   configuration.copy['target-app'].options.processContent = createProcessContent('debug')
+  
+  # vendor package settings
+  configuration.curl = do ->
+    dependencies = grunt.file.readJSON('dependencies.json')
+    dependencies.reduce(
+      (memo, depend) ->
+        memo[depend.name] = {
+          src: depend.url
+          dest: '<%= path.vendor %>/' + depend.name + '.js'
+        }
+        memo
+      ,
+      {}
+    )
 
   configuration
 

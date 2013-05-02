@@ -1,3 +1,5 @@
 {
-  "app/src/ts/name.ts": "app/src/ts/{%= full_path %}.ts"
+    "app/src/ts/main_module.ts"                : "{%= moduleDepth  >  0 ? 'app/src/ts/' + full_path + '.ts' : '__delete' %}",
+    "app/src/ts/main_module_with_nomodules.ts" : "{%= moduleDepth === 0 ? 'app/src/ts/' + full_path + '.ts' : '__delete' %}",
+    "app/src/ts/sub_module.ts"                 : "app/src/ts/{%= sub_full_path %}.ts"
 }

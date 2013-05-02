@@ -5,15 +5,11 @@
 require.config(<RequireConfig>{
     baseUrl: 'js/',
     paths: {
-        'underscore': 'vendor/underscore-1.4.4.min',
-        'deepextend': 'vendor/underscoreDeepextend',
-        'jquery': 'vendor/jquery-1.8.3.min',
-        'json2': 'vendor/json2',
+        '{%= sub_full_name %}' : '{%= sub_full_path %}',
         '{%= full_name %}': '{%= full_path %}'
     },
     shim: {
-        'deepextend': [ 'underscore' ],
-        '{%= full_name %}': [ 'json2', 'jquery', 'deepextend' ]
+        '{%= full_name %}': [ '{%= sub_full_name %}' ]
     }
 });
 require(
