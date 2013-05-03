@@ -1,23 +1,13 @@
-# 不要なディレクトリの除去
 node_modules/
 docs/api/docs
 app/target/
 app/dist/
 .sass-cache/
-
-# app/src/js は lib と vendor 以外無視。以下の3ファイルに記載
-# app/src/js/.gitignore
-# app/src/js/lib/.gitignore
-# app/src/js/vendor/.gitignore
-
-# IDEAの無視
 *.iml
 *.ipr
 *.iws
 .idea/
 .idea_modules/
-
-# 一般に不要と思われるファイル
 *~
 *.log
 *.eml
