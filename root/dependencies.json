@@ -12,6 +12,10 @@
         "url" : "http://underscorejs.org/underscore-min.js"
     },
     {
+        "name": "underscore-merge",
+        "url": "https://gist.github.com/binedisk/5515552/raw/d5ffff32476e8db62d43373f3f699db369e1a7a9/underscore-merge.js"
+    },
+    {
         "name": "require",
         "url" : "http://requirejs.org/docs/release/2.1.5/minified/require.js"
     },
@@ -20,4 +24,3 @@
         "url" : "https://raw.github.com/wycats/handlebars.js/1.0.0-rc.3/dist/handlebars.runtime.js"
     }
 ]
-
