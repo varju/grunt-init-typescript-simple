@@ -1,4 +1,4 @@
-# grunt-init-typescript-simple 0.0.6
+# grunt-init-typescript-simple 0.0.7
 
 > Create a TypeScript project including many useful features which integrates libraries such as JsTestDriver, Jasmine, jQuery, LiveReload.
 
